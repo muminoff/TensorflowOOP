@@ -1,13 +1,8 @@
 import tensorflow as tf
-from PIL import Image
-import numpy as np
-import requests
-import json
-import time
 
 class NeuralNetwork:
 
-	def __init__(self, input_layer, hidden_1, hidden_2, hidden_3, output_layer):
+	def __init__(self, input_layer, hidden_1, hidden_2, hidden_3, output_layer, learning_rate, opt_func):
 		self.input_node = input_layer
 		self.n_classes = output_layer
 		self.n_nodes_hl1 = hidden_1
@@ -19,10 +14,11 @@ class NeuralNetwork:
 
 		self.prediction = self.neural_network_model(self.x)
 		self.cost = 0.5 * tf.reduce_sum(tf.sub(self.prediction, self.y) * tf.sub(self.prediction, self.y))
-		# self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.prediction, self.y))
-		# self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.05).minimize(self.cost)
-		# self.optimizer = tf.train.AdamOptimizer(learning_rate=0.05).minimize(self.cost)
-		self.optimizer = tf.train.GradientDescentOptimizer(0.05).minimize(self.cost)
+
+		if opt_func == "adam":
+			self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
+		else:
+			self.optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.cost)
 
 		self.sess = tf.Session()
 		self.sess.run(tf.initialize_all_variables())
@@ -72,18 +68,3 @@ class NeuralNetwork:
 	def predict(self, input_data):
 		p = self.sess.run(self.prediction, feed_dict={self.x: input_data})
 		return p[0]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
