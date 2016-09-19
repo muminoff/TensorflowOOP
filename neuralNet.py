@@ -2,20 +2,26 @@ import tensorflow as tf
 
 class NeuralNetwork:
 
-	def __init__(self, input_layer, hidden_1, hidden_2, hidden_3, output_layer, learning_rate, opt_func):
+	def __init__(self, input_layer, hidden_1, hidden_2, hidden_3, output_layer, learning_rate, opt_func, cost_func):
 		self.input_node = input_layer
 		self.n_classes = output_layer
 		self.n_nodes_hl1 = hidden_1
 		self.n_nodes_hl2 = hidden_2
 		self.n_nodes_hl3 = hidden_3
+		self.model = 'softmax'
 
 		self.x = tf.placeholder('float', [None, self.input_node])
 		self.y = tf.placeholder('float', [None, self.n_classes])
 
 		self.prediction = self.neural_network_model(self.x)
-		self.cost = 0.5 * tf.reduce_sum(tf.sub(self.prediction, self.y) * tf.sub(self.prediction, self.y))
+		if cost_func == 'reduce_sum':
+			self.model = 'softplus'
+			self.cost = 0.5 * tf.reduce_sum(tf.sub(self.prediction, self.y) * tf.sub(self.prediction, self.y))
+		else:
+			self.model = 'softmax'
+			self.cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(self.prediction, self.y))
 
-		if opt_func == "adam":
+		if opt_func == 'adam':
 			self.optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.cost)
 		else:
 			self.optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.cost)
@@ -45,14 +51,22 @@ class NeuralNetwork:
 			'biases': tf.Variable(tf.random_normal([self.n_classes]))
 		}
 
-		l1 = tf.nn.softplus(tf.matmul(self.x, hidden_1_layer['weights']) + hidden_1_layer['biases'])
-
-		l2 = tf.nn.softplus(tf.matmul(l1, hidden_2_layer['weights']) + hidden_2_layer['biases'])
-
-		l3 = tf.nn.softplus(tf.matmul(l2, hidden_3_layer['weights']) + hidden_3_layer['biases'])
-
-		output = tf.nn.softplus(tf.matmul(l3, output_layer['weights']) + output_layer['biases'])
-
+		if self.model == 'softplus':
+			l1 = tf.nn.softplus(tf.matmul(self.x, hidden_1_layer['weights']) + hidden_1_layer['biases'])
+			l2 = tf.nn.softplus(tf.matmul(l1, hidden_2_layer['weights']) + hidden_2_layer['biases'])
+			l3 = tf.nn.softplus(tf.matmul(l2, hidden_3_layer['weights']) + hidden_3_layer['biases'])
+			output = tf.nn.softplus(tf.matmul(l3, output_layer['weights']) + output_layer['biases'])
+		else:
+			l1 = tf.add(tf.matmul(data, hidden_1_layer['weights']), hidden_1_layer['biases'])
+			l1 = tf.nn.relu(l1)
+			l1 = tf.nn.softmax(l1)
+			l2 = tf.add(tf.matmul(l1, hidden_2_layer['weights']), hidden_2_layer['biases'])
+			l2 = tf.nn.relu(l2)
+			l2 = tf.nn.softmax(l2)
+			l3 = tf.add(tf.matmul(l2, hidden_3_layer['weights']), hidden_3_layer['biases'])
+			l3 = tf.nn.relu(l3)
+			l3 = tf.nn.softmax(l3)
+			output = tf.nn.softmax(tf.matmul(l3, output_layer['weights']) + output_layer['biases'])
 		return output
 
 	def train(self, input_data, output_data, epochs):
