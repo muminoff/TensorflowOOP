@@ -1,6 +1,6 @@
 # TensorFlow OOP
 
-This is an opject oriented approach to Tensorflow
+This is an object oriented approach to Tensorflow
 
 # Getting Started
 
